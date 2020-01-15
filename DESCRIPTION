@@ -1,0 +1,27 @@
+Package: toto
+Type: Toto
+Title: Doctor Who
+Version: 0.0.1
+Imports:
+  tidyverse,
+  ade4,
+  vegan,
+  boral,
+  MInt,
+  Rcpp,
+  RcppArmadillo,
+  coda,
+  snow,
+  beanplot,
+  circlize,
+  corrplot,
+  rmarkdown,
+  rmdformats
+Remotes:
+  guiblanchet/HMSC,
+  TheoreticalEcosystemEcology/alien,
+  hmsc-r/HMSC,
+  gordy2x/ecoCopula,
+  Rmomal/EMtree,
+  nicholasjclark/MRFcov
+  

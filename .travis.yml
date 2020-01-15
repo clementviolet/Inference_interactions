@@ -1,0 +1,24 @@
+language: r
+r: 3.6.2
+cache:
+  packages: yes
+
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install jags
+  - sudo apt-get install r-cran-rjags
+
+before_script:
+- chmod +x ./_build.sh
+
+script:
+- ./_build.sh
+
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  keep_history: true
+  local_dir: _site
+  on:
+    branch: master
