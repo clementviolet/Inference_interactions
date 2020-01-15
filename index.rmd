@@ -6,6 +6,7 @@ output:
     highlight: kate
 ---
 
+<script src="https://hypothes.is/embed.js" async></script>
 
 ```{r setup, echo=FALSE, cache=FALSE}
 library(knitr)
@@ -22,4 +23,3 @@ opts_chunk$set(echo=FALSE,
                warning=FALSE)
 opts_knit$set(width=75)
 ```
-
