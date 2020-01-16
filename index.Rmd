@@ -14,7 +14,7 @@ library(rmdformats)
 
 ## Global options
 options(max.print="75")
-opts_chunk$set(echo=FALSE,
+opts_chunk$set(echo=TRUE,
 	             cache=TRUE,
                prompt=FALSE,
                tidy=TRUE,
@@ -122,7 +122,7 @@ verbose <- 1
 
 ### Sampling
 
-```{r}
+```{r results ='hide'}
 if(parallel::detectCores() > 2 & parallel::detectCores() > nChains){
   
   nParallel <- nChains
@@ -204,7 +204,7 @@ It is possible to use traits data, we need to specify a trait coefficient
 
 ## boral
 
-
+I won't try *boral* right know, because *gllvm* seem to be much faster. 
 
 ## gllvm
 
