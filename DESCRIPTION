@@ -16,10 +16,13 @@ Imports:
   alien,
   EMtree,
   MRFcov,
+  ecoCopula,
+  gllvm,
   snow,
   beanplot,
   circlize,
   corrplot,
+  gclus,
   rmarkdown,
   rmdformats
 Remotes:
