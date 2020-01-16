@@ -11,6 +11,11 @@ Imports:
   Rcpp,
   RcppArmadillo,
   coda,
+  Hmsc,
+  HMSC,
+  alien,
+  EMtree,
+  MRFcov,
   snow,
   beanplot,
   circlize,
@@ -20,7 +25,6 @@ Imports:
 Remotes:
   guiblanchet/HMSC,
   TheoreticalEcosystemEcology/alien,
-  hmsc-r/HMSC,
   gordy2x/ecoCopula,
   Rmomal/EMtree,
   nicholasjclark/MRFcov
