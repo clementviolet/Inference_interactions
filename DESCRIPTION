@@ -4,6 +4,10 @@ Title: Doctor Who
 Version: 0.0.1
 Imports:
   tidyverse,
+  ggraph,
+  tidygraph,
+  viridis,
+  lattice,
   ade4,
   vegan,
   boral,

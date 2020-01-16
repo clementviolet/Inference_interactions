@@ -46,6 +46,7 @@ List of packages to try :
 
 ## Models
 #library(alien)
+library(ade4)
 library(Hmsc)
 library(boral)
 library(ecoCopula)
@@ -55,10 +56,15 @@ library(MInt)
 library(MRFcov)
 library(gllvm)
 
+## Graph
+library(ggraph)
+library(tidygraph)
+
 ## Plots
 library(lattice)
 library(corrplot)
 library(gclus)
+library(viridis)
 
 # Data
 
@@ -295,9 +301,54 @@ plot.4th
 
 ## ecoCopula
 
+### Data
+
+
+```{r}
+data("spider")
+
+abund <- mvabund(spider$abund)
+X <- spider$x
+
+```
+
+### Model fitting & plot
+
+This kind of model ignore traits data.
+
+```{r}
+spider_mod <- manyglm(abund~X)
+spid_graph <- cgr(spider_mod)
+
+plot(spid_graph,pad=1)
+```
+
 
 ## Emtree
 
+### Data
+
+I will use the same data as abose.
+
+### Model fitting
+
+```{r}
+model <- PLN(abund~X)
+
+p <- ncol(abund) # Number of nodes
+
+output <- EMtree(model, maxIter = 10, plot = TRUE)
+str(output)
+```
+
+### Results
+
+```{r}
+edges_prob <- output$edges_prob
+edges_prob[edges_prob <2/p] <- 0
+
+EMtree::draw_network(edges_prob, nodes_label = colnames(abund), pal="dodgerblue3", layout="nicely",curv=0.1)
+```
 
 
 ## MInt
