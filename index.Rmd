@@ -378,7 +378,7 @@ I will use `abund` dataset.
 To fit *Conditional Random Fields* (a case *Markov Random Fields* with covariables), we need to `cbind()` faunistic data  and covariables (using `n_nodes` to specify the last index of abundance column).
 
 ```{r}
-MRF_fit <- MRFcov(data = cbind(abund, scale(X)), n_nodes = 12, n_cores = 4, family = 'poisson')
+MRF_fit <- MRFcov(data = cbind(abund, scale(X)), n_nodes = 12, n_cores = nParallel, family = 'poisson')
 ```
 
 ### Results
