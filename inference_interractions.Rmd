@@ -120,7 +120,7 @@ if(.Platform$OS.type != "windows"){
 
 And run the model.
 
-```{r}
+```{r results="hide"}
 model_hmsc <- sampleMcmc(model_hmsc, thin = thin, samples = samples, transient = transient, nChains = nChains, verbose = 1, nParallel = nParallel)
 ```
 
@@ -135,7 +135,14 @@ hist(effectiveSize(model_hmsc_post$Beta), main = "ess(beta)")
 hist(gelman.diag(model_hmsc_post$Beta, multivariate = FALSE)$psrf, main = "psrf(beta)")
 hist(effectiveSize(model_hmsc_post$Omega[[1]]), main = "ess(omega)")
 hist(gelman.diag(model_hmsc_post$Omega[[1]], multivariate = FALSE)$psrf, main = "psrf(omega)")
+
+par(mfrow=c(1,1))
+
+coda::traceplot(model_hmsc_post$Beta)
 ```
+
+Not so great for chain convergence...
+
 
 Let's see the correlation with the environnemtal variables.
 
