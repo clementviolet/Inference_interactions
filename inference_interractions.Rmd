@@ -105,10 +105,17 @@ model_hmsc <- Hmsc(Y = abund, XFormula = ~soil.dry + bare.sand + fallen.leaves +
 Then we set up the *MCMC* chains.
 
 ```{r}
-thin <- 10
-samples <- 15000
-transient <- 500*thin
-verbose <- 1
+if(.Platform$OS.type != "windows"){
+  thin <- 10
+  samples <- 500
+  transient <- 5*thin
+  verbose <- 1
+}else{
+  thin <- 10
+  samples <- 5500
+  transient <- 50*thin
+  verbose <- 1
+}
 ```
 
 And run the model.
