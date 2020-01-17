@@ -6,6 +6,8 @@ cache:
   packages: yes
   directories:
   - $TRAVIS_BUILD_DIR/index_cache
+  - $TRAVIS_BUILD_DIR/test_packages_cache
+  - $TRAVIS_BUILD_DIR/inference_interractions
 
 before_install:
   - sudo apt-get update

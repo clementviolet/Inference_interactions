@@ -1,0 +1,237 @@
+---
+title: "Inference interractions"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+---
+
+<script src="https://hypothes.is/embed.js" async></script>
+
+```{r setup, echo=FALSE, cache=FALSE}
+library(knitr)
+library(rmdformats)
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=TRUE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+
+
+# Note
+
+Please, click on this link to get back to the [Home Page](index.html).
+
+Here I will compare results of packages `HMSC`, `gllvm`, `ecoCopula` and `EMtree`.
+
+# Packages & data
+
+```{r}
+# Packages
+
+## Models
+
+library(Hmsc)
+library(ecoCopula)
+library(PLNmodels)
+library(EMtree)
+library(gllvm)
+
+## Graph
+library(ggraph)
+library(tidygraph)
+
+## Plots
+library(lattice)
+library(corrplot)
+library(gclus)
+library(viridis)
+
+# Data
+
+data("spider")
+
+sp_names <- colnames(spider$abund)
+
+abund <- as.matrix(spider$abund)
+
+env_sc <- data.frame(scale(spider$x))
+
+## seed
+
+set.seed(42)
+
+## Number of chains for MCMC
+
+nChains <- 3
+
+## Number of cores for parallel computing
+
+if(parallel::detectCores() > 2 & parallel::detectCores() > nChains){
+  
+  nParallel <- nChains
+  
+}else{
+  
+  nParallel <- 1
+  
+}
+```
+
+# HMSC
+
+First, let's  try *HMSC*. We don't have informations about sampling design, let's assume that each site have been visited once.
+
+```{r}
+studyDesign <- data.frame(sample = as.factor(1:nrow(abund)))
+
+rL <- HmscRandomLevel(units = studyDesign$sample)
+```
+
+Now, we will assume that there is no interactions between covariables.
+
+```{r}
+model_hmsc <- Hmsc(Y = abund, XFormula = ~soil.dry + bare.sand + fallen.leaves + moss + herb.layer + reflection, XData = env_sc, studyDesign = studyDesign, ranLevels = list(sample = rL))
+```
+
+
+Then we set up the *MCMC* chains.
+
+```{r}
+thin <- 10
+samples <- 15000
+transient <- 500*thin
+verbose <- 1
+```
+
+And run the model.
+
+```{r}
+model_hmsc <- sampleMcmc(model_hmsc, thin = thin, samples = samples, transient = transient, nChains = nChains, verbose = 1, nParallel = nParallel)
+```
+
+Then we diagnostic the model.
+
+```{r}
+model_hmsc_post <- convertToCodaObject(model_hmsc)
+
+par(mfrow=c(2,2))
+
+hist(effectiveSize(model_hmsc_post$Beta), main = "ess(beta)")
+hist(gelman.diag(model_hmsc_post$Beta, multivariate = FALSE)$psrf, main = "psrf(beta)")
+hist(effectiveSize(model_hmsc_post$Omega[[1]]), main = "ess(omega)")
+hist(gelman.diag(model_hmsc_post$Omega[[1]], multivariate = FALSE)$psrf, main = "psrf(omega)")
+```
+
+Let's see the correlation with the environnemtal variables.
+
+```{r}
+postBeta = getPostEstimate(model_hmsc, parName="Beta")
+plotBeta(model_hmsc, post=postBeta, param="Support", supportLevel = 0.95)
+```
+
+There is no correlation with the species and the bare sediment and reflexion. 
+
+```{r}
+OmegaCor <- computeAssociations(model_hmsc)
+supportLevel <- 0.95
+
+toPlot <- ((OmegaCor[[1]]$support > supportLevel) + (OmegaCor[[1]]$support < (1-supportLevel)) > 0) * OmegaCor[[1]]$mean
+
+corrplot(toPlot, method = "color", col = colorRampPalette(c("blue","white","red"))(200),
+title = paste("random effect level:", model_hmsc$rLNames[1]), mar=c(0,0,1,0))
+```
+
+So there is no inter-specific interactions.
+
+# gllvm
+
+First, let's choose the number of latent variables.
+
+```{r}
+criterias <- NULL
+
+for(i in 0:5){
+  
+  fiti <- gllvm(abund, env_sc, family = "negative.binomial", num.lv = i, formula = abund ~ soil.dry + bare.sand + fallen.leaves + moss + herb.layer + reflection)
+  
+  criterias[i+1] <- summary(fiti)$AICc
+  
+  names(criterias)[i+1]= i
+}
+
+print(criterias)
+```
+
+Based on $AIC$, We will take 1 latent variable. Now we are fitting the model.
+
+```{r}
+model_gllvm <- gllvm(abund, env_sc, family = "negative.binomial", num.lv = 1, formula = abund ~ soil.dry + bare.sand + fallen.leaves + moss + herb.layer + reflection)
+```
+
+Let's see some diagnostic plots.
+
+```{r}
+par(mfrow = c(3, 2), mar = c(4, 4, 2, 1))
+plot(model_gllvm, var.colors = 1)
+```
+
+
+
+Effect of environnemtal variables.
+
+```{r}
+coefplot(model_gllvm, cex.ylab = 0.7, mfrow = c(1,1))
+```
+
+Species interactions
+
+```{r}
+cr0 <- getResidualCor(model_gllvm)
+
+corrplot(cr0[order.single(cr0), order.single(cr0)], diag = FALSE, type = "lower", method = "square", tl.cex = 0.8, tl.srt = 45, tl.col = "red")
+```
+
+Besides one specie (Arctperi), all have negative residual correlation.
+
+# ecoCopula
+
+```{r}
+GCGM_mod <- manyglm(mvabund(abund) ~ as.matrix(env_sc))
+GCGM_graph <- cgr(GCGM_mod)
+
+plot(GCGM_graph, pad=1)
+```
+
+It's making a small graph, some species do not seems to interact.
+
+
+# EMTree
+
+We'll start with the same model
+
+```{r}
+EMT_model <- PLN(abund ~ as.matrix(env_sc))
+
+p <- ncol(abund) # Number of nodes
+
+EMT_model_res <- EMtree(EMT_model, maxIter = 10, plot = TRUE)
+
+str(EMT_model_res)
+```
+
+
+```{r}
+edges_prob <- EMT_model_res$edges_prob
+
+edges_prob[edges_prob < 2/p] <- 0 # Remove links too improbable
+
+EMtree::draw_network(edges_prob, nodes_label = sp_names, pal="dodgerblue3",layout="nicely", curv=0.1)
+```
