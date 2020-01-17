@@ -356,11 +356,11 @@ EMtree::draw_network(edges_prob, nodes_label = colnames(abund), pal="dodgerblue3
 I don't think I will use this package, I don't understand how to use it.
 
 ```{r}
-X <- system.file("extdata", "x.txt", package="MInt")
+dFile <- system.file("extdata", "x.txt", package="MInt")
 
-y <- system.file("extdata", "y.txt", package="MInt")
+rFile  <- system.file("extdata", "y.txt", package="MInt")
 
-m <- mint(y=y, x=X, fmla = ~ feature1 + feature2)
+m <- mint(y=rFile, x=dFile, fmla = ~ feature1 + feature2)
 
 m <- estimate(m) # Partial correlation matrix
 ```

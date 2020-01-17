@@ -5,6 +5,7 @@ Version: 0.0.1
 Imports:
   tidyverse,
   ggraph,
+  formatR,
   tidygraph,
   viridis,
   igraph,
