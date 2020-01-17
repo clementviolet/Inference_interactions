@@ -7,6 +7,7 @@ Imports:
   ggraph,
   tidygraph,
   viridis,
+  igraph,
   lattice,
   ade4,
   vegan,

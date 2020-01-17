@@ -367,3 +367,37 @@ m <- estimate(m) # Partial correlation matrix
 
 
 ## MRFcov
+
+### Data
+
+I will use `abund` dataset.
+
+
+### Model fitting
+
+To fit *Conditional Random Fields* (a case *Markov Random Fields* with covariables), we need to `cbind()` faunistic data  and covariables (using `n_nodes` to specify the last index of abundance column).
+
+```{r}
+MRF_fit <- MRFcov(data = cbind(abund, scale(X)), n_nodes = 12, n_cores = 4, family = 'poisson')
+```
+
+### Results
+
+The heatmap represent predicted interaction when all the covariates are set to their mean (here, it is $0$). 
+
+```{r}
+plotMRF_hm(MRF_mod = MRF_fit)
+
+net <- igraph::graph.adjacency(MRF_fit$graph, weighted = T, mode = "undirected")
+
+igraph::plot.igraph(net, layout = igraph::layout.circle,
+                    edge.width = abs(igraph::E(net)$weight),
+                    edge.color = ifelse(igraph::E(net)$weight < 0, 'blue','red'))
+```
+
+We can see regression coefficients by using this piece of code
+
+```{r}
+MRF_fit$key_coefs
+```
+
