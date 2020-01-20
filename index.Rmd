@@ -30,14 +30,14 @@ opts_knit$set(width=75)
 List of packages to try :
 
 - [ ] alien (Direct Matching Centrality, Indirect matching centrality, 4th corner, binary, Niche probabilistic, KNN as a minimal iEat)
-- [X] Hmsc (HMSC)
+- [x] Hmsc (HMSC)
 - [ ] boral (LVM)
-- [X] gllvm (LVM)
-- [X] ecoCopula (Gaussian Copula Graphical Model)
-- [X] PLNmodels (Gaussian Graphical Model)
-- [X] Emtree (Tree-based inferrence + PLN)
-- [X] MInt (Poisson-multivariate normal hierachical model)
-- [X] MRFcov (Markov random fields)
+- [x] gllvm (LVM)
+- [x] ecoCopula (Gaussian Copula Graphical Model)
+- [x] PLNmodels (Gaussian Graphical Model)
+- [x] Emtree (Tree-based inferrence + PLN)
+- [x] MInt (Poisson-multivariate normal hierachical model)
+- [x] MRFcov (Markov random fields)
 
 # Packages testing
 
