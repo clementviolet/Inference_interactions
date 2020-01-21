@@ -3,6 +3,7 @@ title: "Inference interractions"
 date: "`r Sys.Date()`"
 output:
   rmdformats::readthedown:
+    code_folding: show
     highlight: kate
 ---
 
