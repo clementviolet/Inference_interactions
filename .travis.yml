@@ -8,6 +8,7 @@ cache:
   - $TRAVIS_BUILD_DIR/index_cache
   - $TRAVIS_BUILD_DIR/test_packages_cache
   - $TRAVIS_BUILD_DIR/inference_interractions
+  - $TRAVIS_BUILD_DIR/gllvm
 
 before_install:
   - sudo apt-get update
