@@ -28,5 +28,4 @@ deploy:
   token: $GITHUB_TOKEN
   keep_history: true
   local_dir: _site
-  on:
-    branch: master
+  
