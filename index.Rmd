@@ -25,7 +25,7 @@ opts_chunk$set(echo=TRUE,
 opts_knit$set(width=75)
 ```
 
-
+<!--
 # List of packages 
 
 List of packages to try :
@@ -43,7 +43,12 @@ List of packages to try :
 # Packages testing
 
 Please, [click here](test_packages.html) to see how theses packages work!
+-->
 
 # Inference interractions
 
-Here I will try to predic the same ecological network with different methods. [Click here](inference_interractions.html)
+Here I will try to predic the same ecological network with different methods. 
+<!--
+[Click here](inference_interractions.html)
+-->
+[Click here](gllvm.html) to see more about *Generalized Linear Latent Variable Model*.
