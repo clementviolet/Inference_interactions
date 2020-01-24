@@ -3,7 +3,7 @@ title: "Inference interractions"
 date: "`r Sys.Date()`"
 output:
   rmdformats::readthedown:
-    code_folding: show
+    code_folding: hide
     highlight: kate
 bibliography: ref_interaction_inference.bib
 ---
@@ -329,13 +329,6 @@ network_robin <- graph_robin %>%
 
 network_gllvm[(network_gllvm$from %in% network_robin$from & network_gllvm$to %in% network_robin$to) | (network_gllvm$to %in% network_robin$from & network_gllvm$from %in% network_robin$to),]
 
-stringr::str_replace_all(network_gllvm$from, node_name_gllvm_vector)
-
-fruits %>%
-  stringr::str_replace_all(c("one" = "1", "two" = "2", "three" = "3"))
-
-c("one" = "1", "two" = "2", "three" = "3")
-
 network_gllvm_vector <- network_gllvm %>% 
   mutate(from_to = paste(.$from, .$to), to_from = paste(.$to, .$from)) %>%
   select(from_to, to_from) %>% 
@@ -371,3 +364,5 @@ common_plot
 ```
 
 Interestingly, it is not the edges with the highest conditional probabilities that are shared by these methods, but the edges with the highest residual correlation. Here the plots of the two methods.
+
+# References
