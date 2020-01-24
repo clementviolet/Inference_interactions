@@ -29,3 +29,344 @@ opts_knit$set(width=75)
 
 Please, click on this link to get back to the [Home Page](index.html).
 
+I will use two datasets : one from Stéphane Robin's training (Barents Fish).
+
+
+```{r}
+library(gllvm)
+library(tidygraph)
+
+library(corrplot)
+library(gclus)
+library(ggraph)
+```
+
+# Data
+
+```{r}
+load("BarentsFish.Rdata")
+
+y <- as.data.frame(Data$count)
+
+X <- as.data.frame(Data$covariates)
+```
+
+Looking at the abundance data.
+
+```{r}
+dim(y)
+
+head(y)
+```
+
+Looking at the covariates.
+
+```{r}
+dim(X)
+
+str(X)
+
+summary(X)
+```
+
+Scaling environmental data.
+
+```{r}
+X <- as.data.frame(scale(X))
+```
+
+# Generalized Linear Latent Variable Model
+
+## How does this package work?
+
+
+A GLLVM model regress the mean abondance $u_{ij}$  of the specie $j$ at site $i$ as follow :
+
+$$g(\mu_{ij}) = \eta_{ij} = \alpha_i + \beta_{0j} + x_i'\beta_j + u_i'\gamma_j$$
+Where $\beta_j$ and $\gamma_j$ are vectors of species coefficient related to the covariates and to the factor loadings respectively.
+
+Becaause there is some latent variables and factor loadings that there not observered (obvious), we estimate them with likelihood estimation.
+
+How the algorithm work? First, `gllvm` fit a GLM model on each species. Then it computes *Randomized Quantile Residuals* also known as *Dunn-Smyth Residuals*. These residuals have the propertie to be exactly normaly distributed if model assumptions are correct [@Dunn_1996 ; @Niku_2019a]. That is why it allows the use of factor analysis using maximum-likelihood estimation to compute starting values for latent variables and factor loadings. Finaly, these values are passed into gradient based optimisation algorithms and give us back the factor loadings and latent variables values.
+
+The residual covariance matrix stores informations about species co-occurence not explained by environmental variables computed as the product of loading matrix  the transposed loading matrix. 
+
+$$\Sigma = \Gamma\Gamma'$$
+
+Wich distribution is well suited for these data?
+
+```{r}
+fitp <- gllvm(y, family = poisson())
+
+fitnb <- gllvm(y, family = "negative.binomial")
+```
+
+Look at the diagnostic plots.
+
+```{r}
+par(mfrow = c(3, 2))
+plot(fitp, var.colors = 1)
+
+par(mfrow = c(3, 2))
+plot(fitnb, var.colors = 1)
+```
+
+Using *Poisson* distirubtion there is some overdispersion and there is not when using the *Negative Binomial* distribution. 
+
+How many latent variable should we choose?
+
+```{r}
+AICc <- NULL
+BIC <- NULL
+
+for(i in 0:5){
+  
+  fiti <- gllvm(y, X, family = "negative.binomial", num.lv = i, sd.errors = FALSE, seed = 42)
+  
+  AICc[i+1] <- summary(fiti)$AICc
+  BIC[i+1] <- summary(fiti)$BIC
+  
+  names(AICc)[i+1] = i
+  names(BIC)[i+1] = i
+}
+
+print("AICc")
+print(AICc)
+
+print("BIC")
+print(BIC)
+```
+
+The most parcimonious model is the one with only one latent variable.
+
+Now we create a null model with one latent variable.
+
+```{r}
+fit_null <- gllvm(y, family = "negative.binomial", num.lv = 1, seed = 42)
+```
+
+And now the model
+
+```{r}
+fit <- gllvm(y, X, family = "negative.binomial", num.lv = 1, seed = 42)
+```
+
+How much of the variance is explained by the environmental variables?
+
+```{r}
+1 - getResidualCov(fit)$trace / getResidualCov(fit_null)$trace
+```
+
+Effect of environmental variable
+
+```{r}
+coefplot(fit, cex.ylab = 0.7, mfrow=c(1,1))
+```
+
+Most species of fish are affected by one or more environmental variable.
+
+# Studying co-occurrence patterns
+
+```{r}
+cr <- getResidualCor(fit)
+```
+
+Plotting residual correlation
+
+```{r}
+corrplot(cr[order.single(cr), order.single(cr)], diag = FALSE, type = "lower",
+method = "square", tl.cex = 0.5, tl.srt = 45, tl.col = "red")
+```
+
+Not so bad at all!!!
+
+Now I will try to create a graph from this. I will keep only the 5% most correlated data (2.5% lower bound, 2.5% upper bound).
+
+```{r}
+cr_sub <- as.vector(cr)
+
+cr_sub <- sort(cr_sub, decreasing = TRUE)
+
+# I have a weired bug, if I try to remove all the correlation == 1 (i.e the diagonal), I still have some 1 left...
+# 
+# cr_sub <- cr_sub[cr_sub != 1]
+#
+# To overcome it, I will remove the 30 first element of the vector, because it is a square matrix of 30*30.
+
+cr_sub <- cr_sub[31:length(cr_sub)]
+
+# Now I will keep only the most extreme correlation values
+
+cr_sub <- cr_sub[cr_sub <= quantile(cr_sub, 0.025) | cr_sub > quantile(cr_sub, 0.975)]
+
+cr_xtr <- cr
+cr_xtr[!cr_xtr %in% cr_sub] <- 0
+
+# Now I will remove rows and columns full of 0
+cr_xtr <- cr_xtr[rowSums(cr_xtr) != 0, colSums(cr_xtr) != 0]
+
+# Create the graph
+graph <- as_tbl_graph(cr_xtr)
+```
+
+And now, a graph!
+
+```{r}
+gllvm_plot <- ggraph(graph, layout = "stress",) +
+  geom_edge_link(aes(colour = weight), edge_width = 1.2) + 
+  geom_node_point() + 
+  geom_node_text(aes(label = name), repel = TRUE) +
+  scale_edge_color_viridis(name = "Residual\nCorrelation") +
+  ggtitle("GLLVM method") +
+  theme(panel.background = element_rect(fill = "white")) +
+  theme_void()
+
+gllvm_plot
+```
+
+Ok, now I will use the Robin's model based on PLN models to reconstruct the same network. The code below come from one of his workshop. I do not understand quite well for the moment.
+
+```{r}
+library(PLNmodels)
+library(EMtree)
+
+# Create PLN model
+plnNetAll <- PLNnetwork(as.matrix(y) ~ as.matrix(X))
+
+plnNetAllBest <- getBestModel(plnNetAll)
+
+plnNetAllG <- 1*(plnNetAllBest$model_par$Omega != 0) # We get interactions encoded by 0/1
+
+# Compute Edge proba
+treeAllWeight <- -nrow(y)/2*log(1-cov2cor(plnNetAllBest$model_par$Sigma)^2)
+treeAllScore <- EdgeProba(treeAllWeight)
+
+# Add convert binaries interaction into probability
+graph_robin <- plnNetAllG * treeAllScore
+
+graph_robin <- graph_robin[rowSums(graph_robin) != 0, colSums(graph_robin) != 0]
+
+graph_robin <- as_tbl_graph(graph_robin)
+```
+
+```{r}
+robin_plot <- ggraph(graph_robin, layout = "stress",) +
+  geom_edge_link(aes(colour = weight), edge_width = 1.2) + 
+  geom_node_point() + 
+  geom_node_text(aes(label = name), repel = TRUE) +
+  scale_edge_color_viridis(name = "Conditionnal\nprobabilities") +
+  ggtitle("Robin's method") +
+  theme(panel.background = element_rect(fill = "white")) +
+  theme_void()
+
+robin_plot
+```
+
+Comparing the two infered graph
+
+```{r}
+# Number of links
+graph %>% activate(edges) %>% as_tibble() %>% nrow()
+graph_robin %>% activate(edges) %>% as_tibble() %>% nrow()
+```
+
+Ok, so the `gllvm` method seem to infer more link compare to Robin's method (when I remove loops).
+
+How many nodes are predicted by `gllvm` and Robin's method?
+
+```{r}
+## Extract the name of species
+# GLLVM
+node_name_gllvm <- graph %>%
+  activate(nodes) %>%
+  as_tibble() %>%
+  mutate(id = 1:nrow(.)) %>%
+  mutate(id = as.character(.$id))
+
+# Get a named vector for replacement
+node_name_gllvm_vector <- node_name_gllvm$name %>%
+  `names<-`(node_name_gllvm$id)
+
+# Robin's Method
+node_name_robin <- graph_robin %>%
+  activate(nodes) %>%
+  as_tibble() %>%
+  mutate(id = 1:nrow(.)) %>%
+  mutate(id = as.character(.$id))
+
+# Get a named vector for replacement
+node_name_robin_vector <- node_name_robin$name %>%
+  `names<-`(node_name_robin$id)
+
+# Compare species found by each metho
+node_name_robin_vector[!node_name_robin_vector %in% node_name_gllvm_vector]
+
+node_name_gllvm_vector[!node_name_gllvm_vector %in% node_name_robin_vector]
+
+unname(node_name_robin_vector[node_name_robin_vector %in% node_name_gllvm_vector])
+```
+`gllvm` include 3 species in some interactions that there are not in Robin's method. On the other hand, Robin's method include 5 species in some interactions not predicted by `gllvm`. 9 species are both found by the two methods. It represents 75% shared species for `gllvm` and 64% shared species for Robin's method.
+
+```{r}
+## GLLVM
+# Convert ID to species names
+network_gllvm <- graph %>%
+  activate(edges) %>%
+  as_tibble() %>%
+  select(from, to) %>%
+  mutate(from = as.character(from), to = as.character(to)) %>%
+  mutate(from = stringr::str_replace_all(.$from, rev(node_name_gllvm_vector)), to = stringr::str_replace_all(.$to, rev(node_name_gllvm_vector))) # Use rev() otherwise, there 11 id is replace by "Re_hiRe_hi" and not by "Ly_va"
+
+## Robin's Method
+# Convert ID to species names
+network_robin <- graph_robin %>%
+  activate(edges) %>%
+  as_tibble() %>%
+  select(from, to) %>%
+  mutate(from = as.character(from), to = as.character(to)) %>%
+  mutate(from = stringr::str_replace_all(.$from, rev(node_name_robin_vector)), to = stringr::str_replace_all(.$to, rev(node_name_robin_vector))) # Use rev() otherwise, there 11 id is replace by "Re_hiRe_hi" and not by "Ly_va"
+
+network_gllvm[(network_gllvm$from %in% network_robin$from & network_gllvm$to %in% network_robin$to) | (network_gllvm$to %in% network_robin$from & network_gllvm$from %in% network_robin$to),]
+
+stringr::str_replace_all(network_gllvm$from, node_name_gllvm_vector)
+
+fruits %>%
+  stringr::str_replace_all(c("one" = "1", "two" = "2", "three" = "3"))
+
+c("one" = "1", "two" = "2", "three" = "3")
+
+network_gllvm_vector <- network_gllvm %>% 
+  mutate(from_to = paste(.$from, .$to), to_from = paste(.$to, .$from)) %>%
+  select(from_to, to_from) %>% 
+  unlist(use.names = FALSE)
+
+network_robin_vector <- network_robin %>%
+  mutate(from_to = paste(.$from, .$to), to_from = paste(.$to, .$from)) %>%
+  select(from_to, to_from) %>%
+  unlist
+
+sum(network_gllvm_vector %in% network_robin_vector)
+
+sum(network_gllvm_vector %in% network_robin_vector) / (length(network_gllvm_vector) + length(network_robin_vector))
+```
+
+There are 16 interactions predicts by the two methods, it represents 12% of the whole interactions.
+
+```{r}
+network_common <- stringr::str_split_fixed(network_gllvm_vector[network_gllvm_vector %in% network_robin_vector], " ", n = 2)
+
+graph_common <- as_tbl_graph(network_common)
+
+common_plot <- ggraph(graph_common, layout = "stress",) +
+  geom_edge_link(edge_width = 1.2) + 
+  geom_node_point() + 
+  geom_node_text(aes(label = name), repel = TRUE) +
+  scale_edge_color_viridis() +
+  ggtitle("Common edges between GLLVM and Robin's method") +
+  theme(panel.background = element_rect(fill = "white")) +
+  theme_void()
+
+common_plot
+```
+
+Interestingly, it is not the edges with the highest conditional probabilities that are shared by these methods, but the edges with the highest residual correlation. Here the plots of the two methods.
