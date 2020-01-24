@@ -5,6 +5,7 @@ output:
   rmdformats::readthedown:
     code_folding: show
     highlight: kate
+bibliography: ref_interaction_inference.bib
 ---
 
 <script src="https://hypothes.is/embed.js" async></script>
