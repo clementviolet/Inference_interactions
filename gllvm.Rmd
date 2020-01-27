@@ -207,12 +207,24 @@ gllvm_plot <- ggraph(graph, layout = "stress",) +
   geom_edge_link(aes(colour = weight), edge_width = 1.2) + 
   geom_node_point() + 
   geom_node_text(aes(label = name), repel = TRUE) +
+  scale_edge_color_gradient2(name = "Residual\nCorrelation",
+                             low  = "red",
+                             high = "blue") +
+  ggtitle("GLLVM method") +
+  theme(panel.background = element_rect(fill = "white")) +
+  theme_void()
+
+gllvm_plot_viridis <- ggraph(graph, layout = "stress",) +
+  geom_edge_link(aes(colour = weight), edge_width = 1.2) + 
+  geom_node_point() + 
+  geom_node_text(aes(label = name), repel = TRUE) +
   scale_edge_color_viridis(name = "Residual\nCorrelation") +
   ggtitle("GLLVM method") +
   theme(panel.background = element_rect(fill = "white")) +
   theme_void()
 
 gllvm_plot
+gllvm_plot_viridis
 ```
 
 Ok, now I will use the Robin's model based on PLN models to reconstruct the same network. The code below come from one of his workshop. I do not understand quite well for the moment.
