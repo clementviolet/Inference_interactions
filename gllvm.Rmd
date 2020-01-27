@@ -184,17 +184,7 @@ Not so bad at all!!!
 Now I will try to create a graph from this. I will keep only the 5% most correlated data (2.5% lower bound, 2.5% upper bound).
 
 ```{r}
-cr_sub <- as.vector(cr)
-
-cr_sub <- sort(cr_sub, decreasing = TRUE)
-
-# I have a weired bug, if I try to remove all the correlation == 1 (i.e the diagonal), I still have some 1 left...
-# 
-# cr_sub <- cr_sub[cr_sub != 1]
-#
-# To overcome it, I will remove the 30 first element of the vector, because it is a square matrix of 30*30.
-
-cr_sub <- cr_sub[31:length(cr_sub)]
+cr_sub <- cr[lower.tri(cr)]
 
 # Now I will keep only the most extreme correlation values
 
